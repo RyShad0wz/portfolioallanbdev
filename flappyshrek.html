@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy Shrek</title>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -12,11 +13,13 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #fafafa;
+            background-color: #000000;
+            color: #00ff0d;
+            font-family: 'Luckiest Guy',
         }
 
         canvas {
-            border: 1px solid #ccc;
+            border: 1px solid #04ff00;
         }
     </style>
 </head>
@@ -34,18 +37,19 @@
     const backgroundImage = new Image();
     backgroundImage.src = "assets/background.jpg";
 
-    let birdY = 150;
+    let birdY = 10;
     let velocity = 0;
-    let gravity = 2;
-    let isGameOver = false;
+    let gravity = 0.6;
+    let jumpStrength = -10;
     let gapHeight = 200;
     let gapPosition = 300;
     let pipeX = [800, 800 + gapPosition, 800 + gapPosition * 5];
     let pipeHeight = [200, 250, 180];
     let score = 0;
+    let gameState = "start";
 
     function update() {
-        if (!isGameOver) {
+        if (gameState === "game") {
             for (let i = 0; i < 3; i++) {
                 pipeX[i] -= 5;
                 if (pipeX[i] < -50) {
@@ -53,72 +57,114 @@
                     pipeHeight[i] = Math.random() * 200 + 50;
                     score++;
                 }
-                if (pipeX[i] === 100) {
-                    if (birdY < pipeHeight[i] || birdY > 600 - pipeHeight[i] - gapHeight) {
-                        isGameOver = true;
-                    }
+                if (checkCollision(i)) {
+                    gameOver();
                 }
             }
 
             birdY += velocity;
             velocity += gravity;
 
-            if (birdY > 600 || birdY < 0) {
-                isGameOver = true;
+            if (birdY > canvas.height || birdY < 0) {
+                gameOver();
             }
         }
     }
 
     function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = "limegreen";
-        for (let i = 0; i < 3; i++) {
-            ctx.fillRect(pipeX[i], 600 - pipeHeight[i], 50, pipeHeight[i]);
-            ctx.fillRect(pipeX[i], 0, 50, 600 - pipeHeight[i] - gapHeight);
-        }
+        if (gameState === "start") {
+            ctx.fillStyle = "#00ff0d";
+            ctx.font = "36px Luckiest Guy";
+            ctx.fillText("Flappy Shrek", 280, 200);
+            ctx.font = "24px Luckiest Guy",
+            ctx.fillText("Appuyez sur ESPACE pour jouer", 230, 300);
+        } else if (gameState === "game") {
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = "limegreen";
+                ctx.fillRect(pipeX[i], 600 - pipeHeight[i], 50, pipeHeight[i]);
+                ctx.fillRect(pipeX[i], 0, 50, 600 - pipeHeight[i] - gapHeight);
+            }
 
-        ctx.drawImage(birdImage, 200, birdY, 150, 150);
+            ctx.drawImage(birdImage, 200, birdY, 100, 100);
 
-        ctx.fillStyle = "limegreen";
-        ctx.font = "24px Arial";
-        ctx.fillText("Score: " + score, 20, 40);
-
-        if (isGameOver) {
-            ctx.fillStyle = "limegreen";
-            ctx.font = "36px Arial";
-            ctx.fillText("Shrek-tastique : " + score + " points", 300, 300);
+            ctx.fillStyle = "#00ff0d";
+            ctx.font = "24px Luckiest Guy";
+            ctx.fillText("Score: " + score, 20, 40);
+        } else if (gameState === "gameOver") {
+            ctx.font = "36px Luckiest Guy";
+            ctx.fillText("Shrek-Tastique ! " + score + " points", 200, 300);
+            ctx.font = "24px Luckiest Guy";
+            ctx.fillText("Appuyez sur ESPACE pour rejouer", 230, 350);
         }
     }
 
     function resetGame() {
-        birdY = 150;
+        birdY = 10;
         velocity = 0;
-        isGameOver = false;
+        pipeX = [600, 600 + gapPosition, 600 + gapPosition * 5];
+        pipeHeight = [200, 250, 180];
         score = 0;
-
-        for (let i = 0; i < 3; i++) {
-            pipeX[i] = 800 + gapPosition * i;
-            pipeHeight[i] = Math.random() * 200 + 50;
-        }
+        gameState = "game";
     }
 
-    document.addEventListener("keydown", function (e) {
-        if (e.code === "Space" && !isGameOver) {
-            velocity = -15;
-        }
-        if (e.code === "Enter" && isGameOver) {
+    function startGame() {
+        if (gameState === "gameOver") {
             resetGame();
+        }
+        gameState = "game";
+        loop();
+    }
+
+    function gameOver() {
+        gameState = "gameOver";
+    }
+
+    function loop() {
+        update();
+        render();
+        requestAnimationFrame(loop);
+    }
+
+    function checkCollision(index) {
+    const birdWidth = 25; 
+    const birdHeight = 25; 
+    const birdX = 50; 
+    const birdTopY = birdY; 
+    const birdBottomY = birdY + birdHeight; 
+
+    const pipeLeftX = pipeX[index];
+    const pipeRightX = pipeX[index] + 10; 
+    const pipeTopHeight = pipeHeight[index];
+    const pipeBottomY = 600 - pipeHeight[index] - gapHeight;
+
+    if (
+        (birdX + birdWidth > pipeLeftX && birdX < pipeRightX && birdTopY < pipeTopHeight) ||
+        (birdX + birdWidth > pipeLeftX && birdX < pipeRightX && birdBottomY > pipeBottomY)
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+    document.addEventListener("keydown", function (event) {
+        if (event.code === "Space") {
+            if (gameState === "start") {
+                startGame();
+            } else if (gameState === "game") {
+                velocity = jumpStrength;
+            } else if (gameState === "gameOver") {
+                resetGame();
+            }
         }
     });
 
-    function gameLoop() {
-        update();
-        render();
-        requestAnimationFrame(gameLoop);
-    }
+    render(); 
 
-    gameLoop();
 </script>
 
 </body>
